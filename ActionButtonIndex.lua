@@ -85,9 +85,13 @@ local function ABI_InitTexture(spellTexture)
 end
 
 local function ABI_UpdatePage()
-	-- TODO this is class specific and currently only working for warrior 
-	-- select "Action" bar or "BonusAction" bar based on class
-	ABI_UpdateIndex("BonusAction");
+	-- for all classes update primary action bar
+	ABI_UpdateIndex("Action");
+
+	if ABI_Class == "DRUID" or ABI_Class == "WARRIOR" then
+		-- for druid and warrior also update stance-specific bar
+		ABI_UpdateIndex("BonusAction");
+	end
 end
 
 local function ABI_UpdateButton(button)
@@ -121,7 +125,6 @@ local ABI_Frame = CreateFrame("Frame", nil, UIParent);
 ABI_Frame:RegisterEvent("PLAYER_LOGIN");
 ABI_Frame:RegisterEvent("ACTIONBAR_PAGE_CHANGED");
 ABI_Frame:RegisterEvent("ACTIONBAR_SLOT_CHANGED");
-ABI_Frame:RegisterEvent("UPDATE_SHAPESHIFT_FORM");
 ABI_Frame:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS");
 ABI_Frame:SetScript("OnEvent", function() 
 
@@ -138,8 +141,7 @@ ABI_Frame:SetScript("OnEvent", function()
 	elseif event == "ACTIONBAR_SLOT_CHANGED" then
 		-- action button changed by dragging ability in or out
 		-- arg1 == Action Slot ID (http://www.wowwiki.com/ActionSlot)
-		local button = ABI_ButtonFromID(arg1);
-		ABI_UpdateButton(button);
+		ABI_UpdateButton(ABI_ButtonFromID(arg1));
 
 	elseif event == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
 		if ABI_Class == "WARRIOR" then
@@ -149,19 +151,15 @@ ABI_Frame:SetScript("OnEvent", function()
 				-- "Battle" or "Defensive" or "Berserker"
 				ABI_StanceChange(stance);
 			end
-		end
-	elseif event == "UPDATE_SHAPESHIFT_FORM" then
-		if UnitClass("player") == "DRUID" then
-			-- TBD: Cat, Bear, Dire Bear, Moonkin, Prowl
-			-- TODO maybe this can be done via specific event
+		elseif ABI_Class == "DRUID" then
+			local found, _, stance = string.find(arg1, "You gain (.*)% Form.");
 
-		elseif UnitClass("player") == "ROGUE" then
-			-- check for stealth
-			-- TODO maybe this can be done via specific event
-
-		elseif UnitClass("player") == "PRIEST" then
-			-- check for shadow form
+			if found and ABI_StanceSlots[stance] then
+				-- perform update for "Cat", "Bear" and "Dire Bear" but ignore "Aquatic", "Moonkin" and "Travel"
+				ABI_StanceChange(stance);
+			end
 		end
+		-- Rogues and Priests don't have BonusAction bar in 1.12
 	end
 end);
 
@@ -223,12 +221,18 @@ function ABI_Trigger(spellTexture, handler)
 end
 
 local ABI_OP_Texture = "Interface\\Icons\\Ability_MeleeDamage";
+local ABI_EV_Texture = "Interface\\Icons\\Ability_Rogue_Eviscerate";
+local ABI_HT_Texture = "Interface\\Icons\\Spell_Nature_HealingTouch";
 SlashCmdList["ACTION_BUTTON_INDEX_DEV"] = function(Flag)
 	flag = string.lower(Flag)
 	if (flag == "add") then
 		ABI_Register(ABI_OP_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
+		ABI_Register(ABI_EV_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
+		ABI_Register(ABI_HT_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
 	elseif (flag == "remove") then
 		ABI_Unregister(ABI_OP_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
+		ABI_Unregister(ABI_EV_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
+		ABI_Unregister(ABI_HT_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
 	elseif flag == "print" then
 		for texture, data in ABI_Index do
 			debug(texture);
