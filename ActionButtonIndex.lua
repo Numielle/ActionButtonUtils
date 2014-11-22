@@ -81,6 +81,7 @@ local ABI_StanceSlots = {
 
 local ABI_Index = {};
 local _, ABI_Class = UnitClass("player"); -- english class uppercase, e.g. "WARRIOR"
+local ABI_TraceLength = 3;
 
 local function ABI_tremove(t, value)
 	for n = table.getn(t), 1, -1 do
@@ -181,7 +182,13 @@ end);
 
 function ABI_Register(spellTexture, addHandler, removeHandler)
 	if not spellTexture then
-	-- TODO complain if handler is nil because tinsert will create a bugged table
+		error("ABI_Register called with nil texture.", ABI_TraceLength);
+	elseif not addHandler or type(addHandler) ~= 'function' then
+		error("ABI_Register expecting argument addHandler of type 'function' but received '" .. type(addHandler) .. "' instead.", ABI_TraceLength);
+	elseif not removeHandler or type(removeHandler) ~= 'function' then
+		error("ABI_Register expecting argument removeHandler of type 'function' but received '" .. type(removeHandler) .. "' instead.", ABI_TraceLength);
+	end
+
 	if not ABI_Index[spellTexture] then
 		ABI_Index[spellTexture] = {};
 		ABI_Index[spellTexture]["add"] = {};
@@ -198,12 +205,19 @@ function ABI_Register(spellTexture, addHandler, removeHandler)
 end
 
 function ABI_Unregister(spellTexture, addHandler, removeHandler)
+	if not spellTexture then
+		error("ABI_Unregister called with nil texture.", ABI_TraceLength);
+	elseif not addHandler or type(addHandler) ~= 'function' then
+		error("ABI_Unregister expecting argument addHandler of type 'function' but received '" .. type(addHandler) .. "' instead.", ABI_TraceLength);
+	elseif not removeHandler or type(removeHandler) ~= 'function' then
+		error("ABI_Unregister expecting argument removeHandler of type 'function' but received '" .. type(removeHandler) .. "' instead.", ABI_TraceLength);
+	end
+
 	if ABI_Index[spellTexture] then
 		ABI_tremove(ABI_Index[spellTexture]["add"], addHandler);
 		ABI_tremove(ABI_Index[spellTexture]["remove"], removeHandler);
 
 		if table.getn(ABI_Index[spellTexture]["add"]) == 0 then
-			-- TODO take entire texture out
 			ABI_Index[spellTexture] = nil; -- TODO waste of memory?
 		end
 	end
@@ -211,13 +225,11 @@ end
 
 function ABI_Trigger(spellTexture, handler)
 	if not spellTexture then
-		error("ABI_Trigger called with nil texture.", 3);
-	elseif not handler then
-		error("ABI_Trigger called with nil handler.", 3);
-	elseif type(handler) ~= "function" then
-		error("ABI_Trigger expecting handler of type 'function' but received '" .. type(handler) .. "' instead.", 3);
+		error("ABI_Trigger called with nil texture.", ABI_TraceLength);
+	elseif not handler or type(handler) ~= "function" then
+		error("ABI_Trigger expecting handler of type 'function' but received '" .. type(handler) .. "' instead.", ABI_TraceLength);
 	elseif not ABI_Index[spellTexture] then
-		error("ABI_Trigger never called for texture '" .. spellTexture .. "'.", 3);
+		error("ABI_Trigger never called for texture '" .. spellTexture .. "'.", ABI_TraceLength);
 	end
 
 	for _, button in ABI_Index[spellTexture]["buttons"] do
