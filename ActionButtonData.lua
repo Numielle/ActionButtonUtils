@@ -14,7 +14,7 @@ local ABD_ActionBars = {
 			ActionButton11,
 			ActionButton12
 		},
-		["BonusActionBarFrame"] = {
+		["BonusActionBar"] = {
 			BonusActionButton1,
 			BonusActionButton2,
 			BonusActionButton3,

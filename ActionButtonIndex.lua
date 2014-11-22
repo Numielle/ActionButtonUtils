@@ -77,8 +77,9 @@ local function ABI_PurgeFromIndex(prefix)
 end
 
 local function ABI_UpdatePage()
+	-- TODO this is class specific and currently only working for warrior 
 	ABI_PurgeFromIndex("BonusAction");
-	ABI_CheckAndAdd(ABI_ActionButtons["BonusActionBarFrame"]);
+	ABI_CheckAndAdd(ABI_ActionButtons["BonusActionBar"]);
 end
 
 local function ABI_UpdateButton(button)
@@ -86,7 +87,7 @@ local function ABI_UpdateButton(button)
 	ABI_CheckAndAdd({button});
 end
 
-local function ABI_UpdateIndex(newStance)
+local function ABI_StanceChange(newStance)
 	-- remove all BonusActionButtons 
 	ABI_PurgeFromIndex("BonusAction");
 
@@ -96,7 +97,7 @@ local function ABI_UpdateIndex(newStance)
 			local texture = GetActionTexture(id);
 	
 			if ABI_Index[texture] and not GetActionText(id) then
-				local button = ABI_ActionButtons["BonusActionBarFrame"][index];
+				local button = ABI_ActionButtons["BonusActionBar"][index];
 	
 				tinsert(ABI_Index[texture]["buttons"], button);
 				for _, handler in ABI_Index[texture]["add"] do
@@ -106,7 +107,7 @@ local function ABI_UpdateIndex(newStance)
 			end
 		end
 	else
-		ABI_CheckAndAdd(ABI_ActionButtons["BonusActionBarFrame"]);
+		ABI_CheckAndAdd(ABI_ActionButtons["BonusActionBar"]);
 	end
 end
 
@@ -140,7 +141,7 @@ ABI_Frame:SetScript("OnEvent", function()
 
 			if found then
 				-- "Battle" or "Defensive" or "Berserker"
-				ABI_UpdateIndex(stance);
+				ABI_StanceChange(stance);
 			end
 		end
 	elseif event == "UPDATE_SHAPESHIFT_FORM" then
