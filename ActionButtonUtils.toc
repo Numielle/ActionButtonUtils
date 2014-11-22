@@ -7,5 +7,6 @@
 ## SavedVariables:
 ## SavedVariablesPerCharacter: 
 
+ActionButtonData.lua
 ActionButtonIndex.lua
 ActionButtonGlow.lua

@@ -1,83 +1,24 @@
 local function debug(msg) DEFAULT_CHAT_FRAME:AddMessage("[ABI] " .. tostring(msg), 1, 1, 0); end
 
-local ABI_ActionButtons = {
-	["BonusActionBarFrame"] = { 
-		BonusActionButton1,
-		BonusActionButton2,
-		BonusActionButton3,
-		BonusActionButton4,
-		BonusActionButton5,
-		BonusActionButton6,
-		BonusActionButton7,
-		BonusActionButton8,
-		BonusActionButton9,
-		BonusActionButton10,
-		BonusActionButton11,
-		BonusActionButton12 
-	},
-	["MultiBarLeft"] = { 
-		MultiBarLeftButton1,
-		MultiBarLeftButton2,
-		MultiBarLeftButton3,
-		MultiBarLeftButton4,
-		MultiBarLeftButton5,
-		MultiBarLeftButton6,
-		MultiBarLeftButton7,
-		MultiBarLeftButton8,
-		MultiBarLeftButton9,
-		MultiBarLeftButton10,
-		MultiBarLeftButton11,
-		MultiBarLeftButton12 
-	},
-	["MultiBarRight"] = { 
-		MultiBarRightButton1,
-		MultiBarRightButton2,
-		MultiBarRightButton3,
-		MultiBarRightButton4,
-		MultiBarRightButton5,
-		MultiBarRightButton6,
-		MultiBarRightButton7,
-		MultiBarRightButton8,
-		MultiBarRightButton9,
-		MultiBarRightButton10,
-		MultiBarRightButton11,
-		MultiBarRightButton12 
-	},
-	["MultiBarBottomLeft"] = { 
-		MultiBarBottomLeftButton1,
-		MultiBarBottomLeftButton2,
-		MultiBarBottomLeftButton3,
-		MultiBarBottomLeftButton4,
-		MultiBarBottomLeftButton5,
-		MultiBarBottomLeftButton6,
-		MultiBarBottomLeftButton7,
-		MultiBarBottomLeftButton8,
-		MultiBarBottomLeftButton9,
-		MultiBarBottomLeftButton10,
-		MultiBarBottomLeftButton11,
-		MultiBarBottomLeftButton12 
-	},
-	["MultiBarBottomRight"] = {
-		MultiBarBottomRightButton1,
-		MultiBarBottomRightButton2,
-		MultiBarBottomRightButton3,
-		MultiBarBottomRightButton4,
-		MultiBarBottomRightButton5,
-		MultiBarBottomRightButton6,
-		MultiBarBottomRightButton7,
-		MultiBarBottomRightButton8,
-		MultiBarBottomRightButton9,
-		MultiBarBottomRightButton10,
-		MultiBarBottomRightButton11,
-		MultiBarBottomRightButton12 
-	}
-};
+local ABI_ActionButtons = ABD_Profile("DEFAULT_UI");
 
 local ABI_StanceSlots = {
 	["Battle"] = {73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84},
 	["Defensive"] = {85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96},
 	["Berserker"] = {97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108},
 };
+
+local function ABI_ButtonFromID(slotId) 
+	local slotNumber = ABD_SlotNumber(slotId);
+
+	for barName, bar in ABI_ActionButtons do
+		if ActionButton_GetPagedID(bar[slotNumber]) == slotId then
+			return bar[slotNumber];
+		end
+	end
+
+	return nil; -- TODO this should never happen!
+end
 
 local ABI_Index = {};
 local _, ABI_Class = UnitClass("player"); -- english class uppercase, e.g. "WARRIOR"
@@ -91,25 +32,39 @@ local function ABI_tremove(t, value)
 	end
 end
 
-local function ABI_InitTexture(spellTexture)
-	-- full scan required
-	for _, bar in ABI_ActionButtons do
-		for _, button in bar do
-			local texture = GetActionTexture(ActionButton_GetPagedID(button));
+local function ABI_CheckAndAdd(bar, spellTexture)
+	for _, button in bar do
+		local texture = GetActionTexture(ActionButton_GetPagedID(button));
 
-			if ABI_Index[texture] and not GetActionText(ActionButton_GetPagedID(button)) then
-				tinsert(ABI_Index[texture]["buttons"], button);
-			-- else not registered or a macro
+		-- spellTexture is optional hence disregard any textures that don't match if argument is provided
+		if spellTexture and texture and spellTexture ~= texture then
+			texture = nil;
+		end
+
+		if ABI_Index[texture] and not GetActionText(ActionButton_GetPagedID(button)) then
+			tinsert(ABI_Index[texture]["buttons"], button);
+
+			for _, handler in ABI_Index[texture]["add"] do
+				handler(button);
 			end
+		-- else not registered or a macro
 		end
 	end
 end
 
-local function ABI_UpdateIndex(newStance)
-	-- remove all BonusActionButtons http://stackoverflow.com/a/12397571
+local function ABI_InitTexture(spellTexture)
+	-- full scan required
+	for _, bar in ABI_ActionButtons do
+		ABI_CheckAndAdd(bar, spellTexture);
+	end
+end
+
+local function ABI_PurgeFromIndex(prefix)
+	local pattern = "^"..prefix;
+
 	for texture, spellArray in ABI_Index do
 		for n = table.getn(spellArray["buttons"]), 1, -1 do
-			if string.find(spellArray["buttons"][n]:GetName(), "BonusAction") then
+			if string.find(spellArray["buttons"][n]:GetName(), pattern) then
 				local b = tremove(spellArray["buttons"], n);
 				
 				-- call all remove handlers
@@ -119,20 +74,39 @@ local function ABI_UpdateIndex(newStance)
 			end
 		end
 	end
+end
+
+local function ABI_UpdatePage()
+	ABI_PurgeFromIndex("BonusAction");
+	ABI_CheckAndAdd(ABI_ActionButtons["BonusActionBarFrame"]);
+end
+
+local function ABI_UpdateButton(button)
+	ABI_PurgeFromIndex(button:GetName());
+	ABI_CheckAndAdd({button});
+end
+
+local function ABI_UpdateIndex(newStance)
+	-- remove all BonusActionButtons 
+	ABI_PurgeFromIndex("BonusAction");
 
 	-- only scan BonusAction bar
-	for index, id in ABI_StanceSlots[newStance] do
-		local texture = GetActionTexture(id);
-
-		if ABI_Index[texture] and not GetActionText(id) then
-			local button = ABI_ActionButtons["BonusActionBarFrame"][index];
-
-			tinsert(ABI_Index[texture]["buttons"], button);
-			for _, handler in ABI_Index[texture]["add"] do
-				handler(button);
+	if CURRENT_ACTIONBAR_PAGE == 1 then
+		for index, id in ABI_StanceSlots[newStance] do
+			local texture = GetActionTexture(id);
+	
+			if ABI_Index[texture] and not GetActionText(id) then
+				local button = ABI_ActionButtons["BonusActionBarFrame"][index];
+	
+				tinsert(ABI_Index[texture]["buttons"], button);
+				for _, handler in ABI_Index[texture]["add"] do
+					handler(button);
+				end
+			-- else not registred or a macro
 			end
-		-- else not registred or a macro
 		end
+	else
+		ABI_CheckAndAdd(ABI_ActionButtons["BonusActionBarFrame"]);
 	end
 end
 
@@ -152,12 +126,14 @@ ABI_Frame:SetScript("OnEvent", function()
 		
 	elseif event == "ACTIONBAR_PAGE_CHANGED" then
 		-- primary action bar changed via page up/down
-		debug("TODO " .. event);
+		ABI_UpdatePage();
 
 	elseif event == "ACTIONBAR_SLOT_CHANGED" then
 		-- action button changed by dragging ability in or out
-		-- arg1 == id
-		debug("TODO " .. event .. " " .. arg1);
+		-- arg1 == Action Slot ID (http://www.wowwiki.com/ActionSlot)
+		local button = ABI_ButtonFromID(arg1);
+		ABI_UpdateButton(button);
+
 	elseif event == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
 		if ABI_Class == "WARRIOR" then
 			local found, _, stance = string.find(arg1, "You gain (.*)% Stance.");
