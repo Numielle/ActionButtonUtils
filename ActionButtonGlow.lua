@@ -9,8 +9,6 @@ local ABG_AntTexCoords = {
 	{0.0078125, 0.1796875, 0.75390625, 0.92578125}, {0.1953125, 0.3671875, 0.75390625, 0.92578125}, {0.3828125, 0.5546875, 0.75390625, 0.92578125}, {0.5703125, 0.7421875, 0.75390625, 0.92578125}, {0.7578125, 0.9296875, 0.75390625, 0.92578125}, 
 };
 
-
-
 local function ABG_NextIndex(index)
 	-- we don't need all texture frames for the animation (only 1 to 22)
 	if ( index == 22 ) then
@@ -43,9 +41,14 @@ local function ABG_GetOverlay()
        return overlay;
 end
 
+local ABG_traceLength = 3;
 local ABG_updateInterval = 0.04; -- use 25 Hz 
 function ABG_AddOverlay(button)
-	if ( not button.overlay ) then
+	if not button then
+		error("ABG_AddOverlay called with nil argument.", ABG_traceLength);
+	end
+
+	if not button.overlay then
 		-- initiate new animation
 		button.overlay = ABG_GetOverlay();
 		button.overlay:SetParent(button);
@@ -72,7 +75,11 @@ function ABG_AddOverlay(button)
 end
 
 function ABG_RemoveOverlay(button)
-	if ( button.overlay ) then
+	if not button then
+		error("ABG_RemoveOverlay called with nil argument.", ABG_traceLength);
+	end
+
+	if button.overlay then
 		-- use temporary reference to reset overlay BEFORE putting it back in the pool
 		local overlay = button.overlay;
 
