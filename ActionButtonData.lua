@@ -1,6 +1,7 @@
+-- IMPORTANT -- the name of any action bar must be the prefix of its buttons, e.g. "BonusAction" -> BonusActionButton1 to allow for purging by prefix
 local ABD_ActionBars = {
 	["DEFAULT_UI"] = {
-		["ActionBar"] = {
+		["Action"] = {
 			ActionButton1,
 			ActionButton2,
 			ActionButton3,
@@ -14,7 +15,7 @@ local ABD_ActionBars = {
 			ActionButton11,
 			ActionButton12
 		},
-		["BonusActionBar"] = {
+		["BonusAction"] = {
 			BonusActionButton1,
 			BonusActionButton2,
 			BonusActionButton3,
@@ -94,6 +95,12 @@ local ABD_ClassIndices = {
 		["Berserker"] = {97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108},
 	},
 }
+
+function ABD_ClassValues()
+	local _, class = UnitClass("player"); -- english class uppercase, e.g. "WARRIOR"
+
+	return ABD_ClassIndices[class];
+end
 
 function ABD_Profile(profile)
 	if not ABD_ActionBars[profile] then

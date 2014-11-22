@@ -1,12 +1,7 @@
 local function debug(msg) DEFAULT_CHAT_FRAME:AddMessage("[ABI] " .. tostring(msg), 1, 1, 0); end
 
 local ABI_ActionButtons = ABD_Profile("DEFAULT_UI");
-
-local ABI_StanceSlots = {
-	["Battle"] = {73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84},
-	["Defensive"] = {85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96},
-	["Berserker"] = {97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108},
-};
+local ABI_StanceSlots = ABD_ClassValues();
 
 local function ABI_ButtonFromID(slotId) 
 	local slotNumber = ABD_SlotNumber(slotId);
@@ -17,7 +12,7 @@ local function ABI_ButtonFromID(slotId)
 		end
 	end
 
-	return nil; -- TODO this should never happen!
+	error("[ABI] cannot determine ActionButton for ActionSlot ID " .. slotId); -- should never happen
 end
 
 local ABI_Index = {};
@@ -29,33 +24,6 @@ local function ABI_tremove(t, value)
 		if (t[n] == value) then
 			local v = tremove(t, n);
 		end
-	end
-end
-
-local function ABI_CheckAndAdd(bar, spellTexture)
-	for _, button in bar do
-		local texture = GetActionTexture(ActionButton_GetPagedID(button));
-
-		-- spellTexture is optional hence disregard any textures that don't match if argument is provided
-		if spellTexture and texture and spellTexture ~= texture then
-			texture = nil;
-		end
-
-		if ABI_Index[texture] and not GetActionText(ActionButton_GetPagedID(button)) then
-			tinsert(ABI_Index[texture]["buttons"], button);
-
-			for _, handler in ABI_Index[texture]["add"] do
-				handler(button);
-			end
-		-- else not registered or a macro
-		end
-	end
-end
-
-local function ABI_InitTexture(spellTexture)
-	-- full scan required
-	for _, bar in ABI_ActionButtons do
-		ABI_CheckAndAdd(bar, spellTexture);
 	end
 end
 
@@ -76,28 +44,66 @@ local function ABI_PurgeFromIndex(prefix)
 	end
 end
 
+-- this function either takes the name of an action bar as returned by ABD_Profile or a list of action buttons.
+local function ABI_UpdateIndex(actionBar, spellTexture)
+	
+	if type(actionBar) == 'string' then
+		ABI_PurgeFromIndex(actionBar);
+		actionBar = ABI_ActionButtons[actionBar];
+	elseif type(actionBar) == 'table' then 
+		for _, button in actionBar do
+			ABI_PurgeFromIndex(button:GetName());
+		end
+	else 
+		error("ABI_Update expecting argument of type 'string' or 'table' but received '" .. type(actionBar) .. "' instead.", ABI_TraceLength);
+	end
+
+	for _, button in actionBar do
+		local texture = GetActionTexture(ActionButton_GetPagedID(button));
+
+		-- spellTexture is optional hence disregard any textures that don't match if argument is provided
+		if spellTexture and texture and spellTexture ~= texture then
+			texture = nil;
+		end
+
+		if ABI_Index[texture] and not GetActionText(ActionButton_GetPagedID(button)) then
+			tinsert(ABI_Index[texture]["buttons"], button);
+
+			for _, handler in ABI_Index[texture]["add"] do
+				handler(button);
+			end
+		-- else not registered or a macro
+		end
+	end
+end
+
+local function ABI_InitTexture(spellTexture)
+	-- full scan required
+	for actionBarName, _ in ABI_ActionButtons do
+		ABI_UpdateIndex(actionBarName, spellTexture);
+	end
+end
+
 local function ABI_UpdatePage()
 	-- TODO this is class specific and currently only working for warrior 
-	ABI_PurgeFromIndex("BonusAction");
-	ABI_CheckAndAdd(ABI_ActionButtons["BonusActionBar"]);
+	-- select "Action" bar or "BonusAction" bar based on class
+	ABI_UpdateIndex("BonusAction");
 end
 
 local function ABI_UpdateButton(button)
-	ABI_PurgeFromIndex(button:GetName());
-	ABI_CheckAndAdd({button});
+	ABI_UpdateIndex({button});
 end
 
 local function ABI_StanceChange(newStance)
-	-- remove all BonusActionButtons 
-	ABI_PurgeFromIndex("BonusAction");
-
 	-- only scan BonusAction bar
 	if CURRENT_ACTIONBAR_PAGE == 1 then
+		ABI_PurgeFromIndex("BonusAction");
+
 		for index, id in ABI_StanceSlots[newStance] do
 			local texture = GetActionTexture(id);
 	
 			if ABI_Index[texture] and not GetActionText(id) then
-				local button = ABI_ActionButtons["BonusActionBar"][index];
+				local button = ABI_ActionButtons["BonusAction"][index];
 	
 				tinsert(ABI_Index[texture]["buttons"], button);
 				for _, handler in ABI_Index[texture]["add"] do
@@ -107,7 +113,7 @@ local function ABI_StanceChange(newStance)
 			end
 		end
 	else
-		ABI_CheckAndAdd(ABI_ActionButtons["BonusActionBar"]);
+		ABI_UpdateIndex("BonusAction");
 	end
 end
 
@@ -153,6 +159,8 @@ ABI_Frame:SetScript("OnEvent", function()
 			-- check for stealth
 			-- TODO maybe this can be done via specific event
 
+		elseif UnitClass("player") == "PRIEST" then
+			-- check for shadow form
 		end
 	end
 end);
