@@ -219,36 +219,3 @@ function ABI_Trigger(spellTexture, handler)
 		handler(button);
 	end
 end
-
-local ABI_OP_Texture = "Interface\\Icons\\Ability_MeleeDamage";
-local ABI_EV_Texture = "Interface\\Icons\\Ability_Rogue_Eviscerate";
-local ABI_HT_Texture = "Interface\\Icons\\Spell_Nature_HealingTouch";
-SlashCmdList["ACTION_BUTTON_INDEX_DEV"] = function(Flag)
-	flag = string.lower(Flag)
-	if (flag == "add") then
-		ABI_Register(ABI_OP_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
-		ABI_Register(ABI_EV_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
-		ABI_Register(ABI_HT_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
-	elseif (flag == "remove") then
-		ABI_Unregister(ABI_OP_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
-		ABI_Unregister(ABI_EV_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
-		ABI_Unregister(ABI_HT_Texture, ABG_AddOverlay, ABG_RemoveOverlay);
-	elseif flag == "print" then
-		for texture, data in ABI_Index do
-			debug(texture);
-			debug("  buttons:");
-			for _, button in data["buttons"] do
-				debug("    " .. button:GetName());
-			end
-			debug("  add handlers: "  .. table.getn(data["add"]));
-			for k, v in pairs(data["add"]) do
-				debug("    " .. k);
-			end
-		end
-	else
-		debug("/abi add - Adds Overpower glowing.");
-		debug("/abi remove - Removes Overpower glowing.");
-		debug("/abi print - debugs Index.");
-	end
-end
-SLASH_ACTION_BUTTON_INDEX_DEV1 = "/abi";
