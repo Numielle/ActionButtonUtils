@@ -1,0 +1,11 @@
+## Interface: 11200
+## Title: ActionButtonUtils
+## Notes: A utility addon for developers to index action buttons based on their texture (ability) and add retail-like glowing effect.
+## Author: Numielle @ Feenix
+## Version: 1.0.0
+## Dependencies:
+## SavedVariables:
+## SavedVariablesPerCharacter: 
+
+ActionButtonIndex.lua
+ActionButtonGlow.lua
