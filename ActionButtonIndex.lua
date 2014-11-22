@@ -82,7 +82,6 @@ local ABI_StanceSlots = {
 local ABI_Index = {};
 local _, ABI_Class = UnitClass("player"); -- english class uppercase, e.g. "WARRIOR"
 
-
 local function ABI_tremove(t, value)
 	for n = table.getn(t), 1, -1 do
 		if (t[n] == value) then
@@ -145,6 +144,7 @@ ABI_Frame:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS");
 ABI_Frame:SetScript("OnEvent", function() 
 
 	if event == "PLAYER_LOGIN" then
+		-- in case ABI_Register gets called before spell information is available to the UI
 		for texture, _ in ABI_Index do
 			ABI_InitTexture(texture);
 		end
@@ -180,6 +180,7 @@ ABI_Frame:SetScript("OnEvent", function()
 end);
 
 function ABI_Register(spellTexture, addHandler, removeHandler)
+	if not spellTexture then
 	-- TODO complain if handler is nil because tinsert will create a bugged table
 	if not ABI_Index[spellTexture] then
 		ABI_Index[spellTexture] = {};
@@ -210,13 +211,13 @@ end
 
 function ABI_Trigger(spellTexture, handler)
 	if not spellTexture then
-		error("ABI_Register called with nil texture.", 3);
+		error("ABI_Trigger called with nil texture.", 3);
 	elseif not handler then
-		error("ABI_Register called with nil handler.", 3);
+		error("ABI_Trigger called with nil handler.", 3);
 	elseif type(handler) ~= "function" then
-		error("ABI_Register expecting handler of type 'function' but received '" .. type(handler) .. "' instead.", 3);
+		error("ABI_Trigger expecting handler of type 'function' but received '" .. type(handler) .. "' instead.", 3);
 	elseif not ABI_Index[spellTexture] then
-		error("ABI_Register never called for texture '" .. spellTexture .. "'.", 3);
+		error("ABI_Trigger never called for texture '" .. spellTexture .. "'.", 3);
 	end
 
 	for _, button in ABI_Index[spellTexture]["buttons"] do
