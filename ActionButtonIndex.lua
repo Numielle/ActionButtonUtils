@@ -49,7 +49,7 @@ local function ABI_PurgeFromIndex(prefix)
 end
 
 -- this function either takes the name of an action bar as returned by ABD_Profile or a list of action buttons.
-local function ABI_UpdateIndex(actionBar, spellTexture)
+local function ABI_UpdateIndex(actionBar)
 	
 	if type(actionBar) == 'string' then
 		ABI_PurgeFromIndex(actionBar);
@@ -65,11 +65,6 @@ local function ABI_UpdateIndex(actionBar, spellTexture)
 	for _, button in actionBar do
 		local texture = GetActionTexture(ActionButton_GetPagedID(button));
 
-		-- spellTexture is optional hence disregard any textures that don't match if argument is provided
-		if spellTexture and texture and spellTexture ~= texture then
-			texture = nil;
-		end
-
 		if ABI_Index[texture] and not GetActionText(ActionButton_GetPagedID(button)) then
 			tinsert(ABI_Index[texture]["buttons"], button);
 
@@ -81,10 +76,10 @@ local function ABI_UpdateIndex(actionBar, spellTexture)
 	end
 end
 
-local function ABI_InitTexture(spellTexture)
+local function ABI_Reindex()
 	-- full scan required
 	for actionBarName, _ in ABI_ActionButtons do
-		ABI_UpdateIndex(actionBarName, spellTexture);
+		ABI_UpdateIndex(actionBarName);
 	end
 end
 
@@ -134,9 +129,7 @@ ABI_Frame:SetScript("OnEvent", function()
 
 	if event == "PLAYER_LOGIN" then
 		-- in case ABI_Register gets called before spell information is available to the UI
-		for texture, _ in ABI_Index do
-			ABI_InitTexture(texture);
-		end
+		ABI_Reindex();
 		
 	elseif event == "ACTIONBAR_PAGE_CHANGED" then
 		-- primary action bar changed via page up/down
@@ -182,7 +175,7 @@ function ABI_Register(spellTexture, addHandler, removeHandler)
 		ABI_Index[spellTexture]["remove"] = {};
 		ABI_Index[spellTexture]["buttons"] = {};
 
-		ABI_InitTexture(spellTexture);
+		ABI_Reindex();
 	end
 
 	tinsert(ABI_Index[spellTexture]["add"], addHandler);
