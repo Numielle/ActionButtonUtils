@@ -5,6 +5,7 @@ This is a WoW addon for client version 1.12 developed and tested on Feenix realm
 Currently supported action bars:
 <ul>
   <li>Blizzard Default UI</li>
+  <li>Bartender2</li>
 </ul>
 
 Thanks to Lulleh @ Feenix for coming up with the idea of a backport for Vanilla.
@@ -16,8 +17,8 @@ How to use?
 
 If you want to include the glowing by yourself, you can use the functions 
 ```lua
-ABG_AddOverlay(button)
-ABG_RemoveOverlay(button)
+  ABG_AddOverlay(button)
+  ABG_RemoveOverlay(button)
 ```
 The highlighting is implemented via an additional frame with the button set as its parent, thus inheriting all rendering-related properties. Upon removal those frames will be stored in a list ready to be reused in the future to avoid unneccessary memory hogging.
 
