@@ -49,3 +49,13 @@ Important Notes
 <ul>
   <li> While it is possible to pass ABG_AddOverlay and ABG_RemoveOverlay as handlers to ABI_Register, you should refrain from doing so as during the unregistration, the handlers will be removed "by value", hence multiple registrations of the same functions may impact each other. If you use this feature in a custom addon, you should include a prefix in you handler names that will (most likely) avoid any collision with other addons.
 </ul>
+
+Changelog
+=========
+<ul>
+  <li>1.0.1</li>
+  <ul>
+    <li>fixed a bug where registering a new ability would discard the index for all other abilities</li>
+    <li>registering a new spell will now cause the index to be fully recreated</li>
+  </ul>
+</ul>
