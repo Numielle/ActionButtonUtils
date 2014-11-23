@@ -19,10 +19,14 @@ local ABI_Index = {};
 local _, ABI_Class = UnitClass("player"); -- english class uppercase, e.g. "WARRIOR"
 local ABI_TraceLength = 3;
 
-local function ABI_tremove(t, value)
+local function ABI_tremove(t, value, handler)
 	for n = table.getn(t), 1, -1 do
 		if (t[n] == value) then
 			local v = tremove(t, n);
+
+			if handler then
+				handler(v);
+			end
 		end
 	end
 end
@@ -197,6 +201,9 @@ function ABI_Unregister(spellTexture, addHandler, removeHandler)
 	end
 
 	if ABI_Index[spellTexture] then
+		-- perform cleanup to unregister
+		ABI_Trigger(spellTexture, removeHandler);
+
 		ABI_tremove(ABI_Index[spellTexture]["add"], addHandler);
 		ABI_tremove(ABI_Index[spellTexture]["remove"], removeHandler);
 
