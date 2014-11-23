@@ -86,6 +86,11 @@ local ABD_ActionBars = {
 			MultiBarBottomRightButton12
 		}
 	}, -- DEFAULT_UI
+	["ZBAR"] = {
+		["zBar1"] = {
+
+		}
+	},
 };
 
 local ABD_ClassIndices = {
@@ -113,6 +118,10 @@ function ABD_Profile(profile)
 	end
 
 	return ABD_ActionBars[profile];
+end
+
+function ABD_MainStanceBars(profile)
+	return "Action", "BonusAction";
 end
 
 function ABD_SlotNumber(slotId)

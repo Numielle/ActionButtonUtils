@@ -2,8 +2,10 @@ local function debug(msg) DEFAULT_CHAT_FRAME:AddMessage("[ABI] " .. tostring(msg
 
 local ABI_ActionButtons = ABD_Profile("DEFAULT_UI");
 local ABI_StanceSlots = ABD_ClassValues();
+local ABI_MainBar, ABI_StanceBar = ABD_MainStanceBars("DEFAULT_UI");
 
 local function ABI_ButtonFromID(slotId) 
+	debug("looking up slotId " .. slotId);
 	local slotNumber = ABD_SlotNumber(slotId);
 
 	for barName, bar in ABI_ActionButtons do
@@ -85,11 +87,11 @@ end
 
 local function ABI_UpdatePage()
 	-- for all classes update primary action bar
-	ABI_UpdateIndex("Action");
+	ABI_UpdateIndex(ABI_MainBar);
 
 	if ABI_Class == "DRUID" or ABI_Class == "WARRIOR" then
 		-- for druid and warrior also update stance-specific bar
-		ABI_UpdateIndex("BonusAction");
+		ABI_UpdateIndex(ABI_StanceBar);
 	end
 end
 
@@ -100,13 +102,13 @@ end
 local function ABI_StanceChange(newStance)
 	-- only scan BonusAction bar
 	if CURRENT_ACTIONBAR_PAGE == 1 then
-		ABI_PurgeFromIndex("BonusAction");
+		ABI_PurgeFromIndex(ABI_StanceBar);
 
 		for index, id in ABI_StanceSlots[newStance] do
 			local texture = GetActionTexture(id);
 	
 			if ABI_Index[texture] and not GetActionText(id) then
-				local button = ABI_ActionButtons["BonusAction"][index];
+				local button = ABI_ActionButtons[ABI_StanceBar][index];
 	
 				tinsert(ABI_Index[texture]["buttons"], button);
 				for _, handler in ABI_Index[texture]["add"] do
@@ -116,7 +118,7 @@ local function ABI_StanceChange(newStance)
 			end
 		end
 	else
-		ABI_UpdateIndex("BonusAction");
+		ABI_UpdateIndex(ABI_StanceBar);
 	end
 end
 
