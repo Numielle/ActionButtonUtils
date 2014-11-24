@@ -5,7 +5,6 @@ local ABI_StanceSlots = ABD_ClassValues();
 local ABI_MainBar, ABI_StanceBar = ABD_MainStanceBars("DEFAULT_UI");
 
 local function ABI_ButtonFromID(slotId) 
-	debug("looking up slotId " .. slotId);
 	local slotNumber = ABD_SlotNumber(slotId);
 
 	for barName, bar in ABI_ActionButtons do
