@@ -138,7 +138,15 @@ ABI_Frame:SetScript("OnEvent", function()
 	elseif event == "ACTIONBAR_SLOT_CHANGED" then
 		-- action button changed by dragging ability in or out
 		-- arg1 == Action Slot ID (http://www.wowwiki.com/ActionSlot)
-		ABI_UpdateButton(ABI_ButtonFromID(arg1));
+		if arg1 > 0 then -- FIXME strange behavior: this sometimes gettin called with value 0 (i think upon zoning)
+			local button = ABI_ButtonFromID(arg1);
+
+			if button then
+				ABI_UpdateButton(button);
+			else
+				debug("button lookup for action slot id " .. arg1 .. " failed.");
+			end
+		end
 
 	elseif event == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS" then
 		if ABI_Class == "WARRIOR" then
