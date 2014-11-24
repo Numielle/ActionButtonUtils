@@ -54,6 +54,11 @@ Important Notes
 Changelog
 =========
 <ul>
+  <li>1.0.2</li>
+  <ul>
+    <li>fixed an error related to zoning</li>
+    <li>added a debug print statement to further investigate problems with button lookup</li>
+  </ul>
   <li>1.0.1</li>
   <ul>
     <li>fixed a bug where registering a new ability would discard the index for all other abilities</li>
