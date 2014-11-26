@@ -9,6 +9,11 @@ local ABG_AntTexCoords = {
 	{0.0078125, 0.1796875, 0.75390625, 0.92578125}, {0.1953125, 0.3671875, 0.75390625, 0.92578125}, {0.3828125, 0.5546875, 0.75390625, 0.92578125}, {0.5703125, 0.7421875, 0.75390625, 0.92578125}, {0.7578125, 0.9296875, 0.75390625, 0.92578125}, 
 };
 
+local ABG_MainTexCoords = {
+	["golden"] = {0.0546875, 0.4609375, 0.30078125, 0.50390625},
+	["white"] = {0.0546875, 0.4609375, 0.55859375, 0.76171875},
+};
+
 local function ABG_NextIndex(index)
 	-- we don't need all texture frames for the animation (only 1 to 22)
 	if ( index == 22 ) then
@@ -28,17 +33,30 @@ local function ABG_GetOverlay()
                overlay = CreateFrame("Frame", "ActionButtonOverlay"..ABG_numOverlays);
 	       overlay:SetFrameStrata("TOOLTIP");
 
-	       overlay.background = overlay:CreateTexture(nil, "BACKGROUND");
-	       overlay.background:SetTexture("Interface\\AddOns\\ActionButtonUtils\\Textures\\IconAlert");
-	       overlay.background:SetTexCoord(0.0546875, 0.4609375, 0.30078125, 0.50390625);
-	       overlay.background:SetAllPoints(overlay);
+	       overlay.white = overlay:CreateTexture(nil, "BACKGROUND");
+	       overlay.white:SetTexture("Interface\\AddOns\\ActionButtonUtils\\Textures\\IconAlert");
+	       overlay.white:SetTexCoord(ABG_MainTexCoords["white"][1], ABG_MainTexCoords["white"][2], ABG_MainTexCoords["white"][3], ABG_MainTexCoords["white"][4]);
+	       overlay.white:SetAllPoints(overlay);
+
+	       overlay.golden = overlay:CreateTexture(nil, "LOW");
+	       overlay.golden:SetTexture("Interface\\AddOns\\ActionButtonUtils\\Textures\\IconAlert");
+	       overlay.golden:SetTexCoord(ABG_MainTexCoords["golden"][1], ABG_MainTexCoords["golden"][2], ABG_MainTexCoords["golden"][3], ABG_MainTexCoords["golden"][4]);
+	       overlay.golden:SetAllPoints(overlay);
 
 	       overlay.glow = overlay:CreateTexture(nil, "MEDIUM");
 	       overlay.glow:SetTexture("Interface\\AddOns\\ActionButtonUtils\\Textures\\IconAlertAnts");
 	       overlay.glow:SetTexCoord(ABG_AntTexCoords[1][1], ABG_AntTexCoords[1][2], ABG_AntTexCoords[1][3], ABG_AntTexCoords[1][4]);
 	       overlay.glow:SetAllPoints(overlay);
        end
+
        return overlay;
+end
+
+local function ABG_NextAnt(overlay)
+	local index = ABG_NextIndex(overlay.index);
+
+	overlay.index = index;
+	overlay.glow:SetTexCoord(ABG_AntTexCoords[index][1], ABG_AntTexCoords[index][2], ABG_AntTexCoords[index][3], ABG_AntTexCoords[index][4]);
 end
 
 local ABG_traceLength = 3;
@@ -50,6 +68,7 @@ function ABG_AddOverlay(button)
 
 	if not button.overlay then
 		-- initiate new animation
+		-- TODO refactor reset into local function
 		button.overlay = ABG_GetOverlay();
 		button.overlay:SetParent(button);
 		button.overlay:SetWidth(button:GetWidth());
@@ -57,6 +76,7 @@ function ABG_AddOverlay(button)
 		button.overlay:SetAllPoints(button);
 		button.overlay.index = 1;
 		button.overlay.lastUpdated = 0;
+		button.overlay.golden:SetAlpha(1.0);
 
 		button.overlay:Show(); 
 
@@ -64,9 +84,7 @@ function ABG_AddOverlay(button)
 	       		button.overlay.lastUpdated = button.overlay.lastUpdated + arg1 -- elapsed
 
 			if (button.overlay.lastUpdated > ABG_updateInterval) then
-		       		local index = ABG_NextIndex(button.overlay.index);
-		       		button.overlay.index = index;
-				button.overlay.glow:SetTexCoord(ABG_AntTexCoords[index][1], ABG_AntTexCoords[index][2], ABG_AntTexCoords[index][3], ABG_AntTexCoords[index][4]);
+				ABG_NextAnt(button.overlay);
 
 				button.overlay.lastUpdated = 0;
 			end
@@ -80,16 +98,36 @@ function ABG_RemoveOverlay(button)
 	end
 
 	if button.overlay then
-		-- use temporary reference to reset overlay BEFORE putting it back in the pool
-		local overlay = button.overlay;
+		button.removeTime = GetTime();
 
-		button.overlay:SetScript("OnUpdate", nil);
-		button.overlay:Hide();
-		button.overlay:SetParent(UIParent);
-		button.overlay = nil;
+		button.overlay:SetScript("OnUpdate", function() 
+			local diff = GetTime() - button.removeTime;
 
-		-- put the frame into the pool to reuse it in the future
-		tinsert(ABG_unusedOverlayGlows, overlay);
+			if diff > 0.5 then
+				-- turn off completely
+				-- use temporary reference to reset overlay BEFORE putting it back in the pool
+				local overlay = button.overlay;
 
+				button.overlay:SetScript("OnUpdate", nil);
+				button.overlay:Hide();
+				button.overlay:SetParent(UIParent);
+				button.overlay = nil;
+
+				-- put the frame into the pool to reuse it in the future
+				tinsert(ABG_unusedOverlayGlows, overlay);
+			else
+				-- TODO refactor code redundancy from AddOverlay OnUpdate
+				button.overlay.golden:SetAlpha(1.0 - (diff * 2)); -- smoothly remove golden to show white
+
+	       			button.overlay.lastUpdated = button.overlay.lastUpdated + arg1 -- elapsed
+
+				if (button.overlay.lastUpdated > ABG_updateInterval) then
+					ABG_NextAnt(button.overlay);
+
+					button.overlay.lastUpdated = 0;
+				end
+
+			end
+		end);
 	end
 end
