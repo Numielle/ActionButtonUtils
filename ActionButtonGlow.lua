@@ -76,7 +76,10 @@ function ABG_AddOverlay(button)
 		button.overlay:SetAllPoints(button);
 		button.overlay.index = 1;
 		button.overlay.lastUpdated = 0;
+
+		-- reset fade out
 		button.overlay.golden:SetAlpha(1.0);
+		button.overlay:SetAlpha(1.0);
 
 		button.overlay:Show(); 
 
@@ -117,7 +120,9 @@ function ABG_RemoveOverlay(button)
 				tinsert(ABG_unusedOverlayGlows, overlay);
 			else
 				-- TODO refactor code redundancy from AddOverlay OnUpdate
-				button.overlay.golden:SetAlpha(1.0 - (diff * 2)); -- smoothly remove golden to show white
+				button.overlay:SetAlpha(1.0 - (diff * 2));
+				button.overlay.golden:SetAlpha(0);
+				--button.overlay.golden:SetAlpha(1.0 - (diff * 2)); -- smoothly remove golden to show white
 
 	       			button.overlay.lastUpdated = button.overlay.lastUpdated + arg1 -- elapsed
 
